@@ -1,5 +1,5 @@
 # Automated Crossword Puzzle Generator
-#### Video Demo:  https://www.youtube.com/watch?v=_HlRideRQCk
+
 #### Description: 
 The application includes a sign-in feature and focuses on generating crossword puzzles dynamically. Here's a breakdown of the key features and functionalities I implemented:
 
