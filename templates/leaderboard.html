@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Nav Bar -->
+<div class="topnav">
+  
+  <div class="brand">
+    <a href="#hero">
+      <h1><span>C</span>rossword<span>P</span>uzzle</h1>
+    </a>
+  </div>
+  
+  <div class="link">
+    <a href="{{ url_for('logout') }}">Logout</a>
+  <a href="#about">About</a>
+  <a href="{{ url_for('home') }}">Home</a>
+</div>
+</div>
+  <h1 style="display: flex;justify-content: center;padding-top: 15px;">Leaderboard</h1>
+  
+  
+  <table class="leaderboard">
+		<thead>
+			<tr>
+				<th>Rank</th>
+				<th>Name</th>
+				<th>Score</th>
+			</tr>
+		</thead>
+		<tbody>
+      {% for user in top_users %}
+			<tr>
+				<td>{{ loop.index }}</td>
+				<td>{{user.username}}</td>
+				<td>{{user.score}}</td>
+			</tr>
+      
+			
+      {% endfor %}
+		</tbody>
+	</table>
+
+  <p class="loggedinas"> Logged in as {{username}} </p>
+  
+{% endblock %}
+
+

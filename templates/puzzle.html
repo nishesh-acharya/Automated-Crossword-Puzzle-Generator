@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="topnav">
+  
+  <div class="brand">
+    <a>
+      <h1><span>C</span>rossword<span>P</span>uzzle-{{difficulty.capitalize()}}</h1>
+    </a>
+  </div>
+  
+  <div class="link">
+    <a href="{{ url_for('logout') }} ">Logout</a>
+  <a href="#about">About</a>
+  <a href="{{ url_for('leaderboard') }}">Leaderboards</a>
+  <a href="{{ url_for('home') }}">Home</a>  
+</div>
+</div>
+
+<h1 style="text-align: center;margin-top: 10px;">Solve this puzzle</h1>
+
+  <p id = "wordcluestring" style="display:none">{{ result }}</p>
+  <div style="display: grid; place-items: center; height: 35vh; margin: 30px;">
+  <div id="container1" style="display:inline-flex;justify-content: space-evenly;text-align: center;align-content: stretch;align-items: baseline;flex-direction: row;">
+    <br>
+    <br>
+    <table id="puzzle-grid"></table>
+    <div id="clues"></div>
+    </div>
+    <br>
+  <br>
+  <div class="centered-content-buttons">
+    <div>
+      <button id="submit" onclick="verifysolution()">Submit</button>
+      <button id="solve" onclick="solve()">Solve</button>
+    </div>
+    <form action="{{ url_for('home') }}"><button id="ret" style="display: none;">Return Home</button></form>
+    <br>
+    <p id="correctincorrect"></p>
+    <form method="post" action="{{ url_for('increase_score') }}">
+      <input type="hidden" name="increase_amount" value="{{ difficulty }}">
+      <button id="inc" style="display: none;" type="submit">Return Home</button>
+    </form>
+  </div>
+</div>
+  </div>
+  <p class="loggedinas"> Logged in as {{username}} </p>
+  
+  <script>
+    //style="display: none;"
+    // Input data
+    var inputString = document.getElementById("wordcluestring").textContent;
+    console.log(inputString);
+      var result = extractWordsAndClues(inputString);
+      var words = result.words;
+      var clues = result.clues;
+      var input_json = convert_to_json(words, clues);
+      console.log(JSON.stringify(input_json));
+
+        // Output data
+      var layout = generateLayout(input_json);
+      var rows = layout.rows;
+      var columns = layout.cols;
+      var jsonData = layout.result; // words along with orientation, position, startx, and starty
+      var jsonDataFiltered = jsonData.filter((data) => data.orientation !== "none"); //remove all the data without orientation
+      
+      generatePuzzle(rows, columns, jsonDataFiltered);
+
+      function extractWordsAndClues(inputString) {
+        var inputStr = inputString.replace(/\n/g, '');
+        var words = [];
+        var clues = [];
+
+        // Split the input string by periods and filter out empty entries
+        var entries = inputStr.split('.').filter(entry => entry.trim() !== '');
+
+        entries.forEach(entry => {
+          // Split each entry by colon and filter out empty parts
+          var parts = entry.split(':').filter(part => part.trim() !== '');
+
+          if (parts.length >= 2) {
+            var str = parts[0].trim();
+            var word = str.replace(/\s/g,'');
+            words.push(word);
+            clues.push(parts[1].trim());
+          }
+        });
+
+        return { words, clues };
+      }
+
+    
+    function convert_to_json(words, clues){
+      var json_data = [];
+      for(let i in words){
+          if(words[i].length > 0){
+              json_data[i] = {"clue": clues[i].toLowerCase(),"answer": words[i].toLowerCase()};
+          }
+      }
+
+      return json_data;
+    }
+
+    function generatePuzzle(rows, columns, jsonDataFiltered) {
+          console.log(JSON.stringify(jsonData));
+          var grid = document.getElementById("puzzle-grid");
+          
+          var cluesDiv = document.getElementById("clues");
+          grid.innerHTML = "";
+          cluesDiv.innerHTML = "";
+
+          for (let row = 0; row < rows; row++) {
+              var tr = document.createElement("tr");
+              for (let col = 0; col < columns; col++) {
+                  var td = document.createElement("td");
+                  td.classList.add("dark");
+                  tr.appendChild(td);
+              }
+              grid.appendChild(tr);
+          }
+
+          jsonDataFiltered.forEach(({ answer, startx, starty, orientation, position, clue }) => {
+              var rowIdx = starty - 1;
+              var colIdx = startx - 1;
+              var tr = grid.childNodes[rowIdx];
+
+              tr.childNodes[colIdx].classList.remove("dark");
+              for (let i = 0; i < answer.length; i++) {
+                  var currentRowIdx = orientation === "down" ? rowIdx + i : rowIdx;
+                  var currentColIdx = orientation === "across" ? colIdx + i : colIdx;
+                  var cell = grid.childNodes[currentRowIdx].childNodes[currentColIdx];
+                  cell.classList.remove("dark");
+                  cell.innerHTML = `<input type="text" maxlength="1" style="width: 85%; height: 85%; text-transform: capitalize; text-align: center; border: none; backgroundColor = "transparent">`;
+
+                  
+                  //add event listener for keyevent
+                  cell.addEventListener("keydown", (event) => {
+                  const key = event.key;
+                  const input = event.target;
+                  const td = input.parentNode;
+                  const tr = td.parentNode;
+                  const currentRow = Array.prototype.indexOf.call(tr.parentNode.children, tr);
+                  const currentCol = Array.prototype.indexOf.call(tr.children, td);
+
+                  // Move focus to the appropriate neighboring cell
+                  if (key === "ArrowLeft" && currentCol > 0) {
+                      const nextInput = tr.children[currentCol - 1].querySelector("input");
+                      if (nextInput) {
+                          nextInput.focus();
+                      }
+                  } else if (key === "ArrowRight" && currentCol < tr.children.length - 1) {
+                      const nextInput = tr.children[currentCol + 1].querySelector("input");
+                      if (nextInput) {
+                          nextInput.focus();
+                      }
+                  } else if (key === "ArrowUp" && currentRow > 0) {
+                      event.preventDefault(); // Prevent default behavior of ArrowUp
+                      const nextRow = tr.parentNode.children[currentRow - 1];
+                      if (nextRow) {
+                          const nextInput = nextRow.children[currentCol].querySelector("input");
+                          if (nextInput) {
+                              nextInput.focus();
+                          }
+                      }
+                  } else if (key === "ArrowDown" && currentRow < tr.parentNode.children.length - 1) {
+                      event.preventDefault(); // Prevent default behavior of ArrowDown
+                      const nextRow = tr.parentNode.children[currentRow + 1];
+                      if (nextRow) {
+                          const nextInput = nextRow.children[currentCol].querySelector("input");
+                          if (nextInput) {
+                              nextInput.focus();
+                          }
+                      }
+                  }
+              });
+              }
+              tr.childNodes[colIdx].innerHTML = `<input type="text" maxlength="1" style="width: 85%; height: 85%; text-transform: capitalize; text-align: center; border: none; backgroundColor = "transparent" placeholder= ${position}>`;                                  
+
+              var clueElement = document.createElement("p");
+              clueElement.textContent = `${position}. ${clue} (${orientation})`;
+              cluesDiv.appendChild(clueElement);
+          });
+      }
+
+      function verifysolution(){
+      var verify = checkAnswers();
+      if (verify){
+        inc = document.getElementById("inc");
+        cor = document.getElementById("correctincorrect");
+        inc.style.display ='inline';
+        cor.innerHTML = "Correct Solution";
+        document.getElementById("submit").style.display = 'none';
+        document.getElementById("solve").style.display = 'none';
+      }
+      else{
+        cor = document.getElementById("correctincorrect");
+        cor.innerHTML = "Incorrect Solution"
+      }
+    }
+
+    function checkAnswers() {
+            let isCorrect = true;
+            jsonDataFiltered.forEach(({ answer, startx, starty, orientation }) => {
+                const rowIdx = starty - 1;
+                const colIdx = startx - 1;
+                let userAnswer = '';
+
+                for (let i = 0; i < answer.length; i++) {
+                    const currentRowIdx = orientation === "down" ? rowIdx + i : rowIdx;
+                    const currentColIdx = orientation === "across" ? colIdx + i : colIdx;
+                    const cell = document.getElementById("puzzle-grid").childNodes[currentRowIdx].childNodes[currentColIdx];
+                    const userInput = cell.querySelector("input").value.toUpperCase();
+
+                    userAnswer += userInput;
+                }
+
+                if (userAnswer !== answer.toUpperCase()) {
+                    isCorrect = false;
+                }
+            });
+
+            console.log(isCorrect);
+            return isCorrect;
+        }
+
+        function solve() {
+          console.log(JSON.stringify(jsonData));
+          var grid = document.getElementById("puzzle-grid");
+          
+          var cluesDiv = document.getElementById("clues");
+          grid.innerHTML = "";
+          cluesDiv.innerHTML = "";
+
+          for (let row = 0; row < rows; row++) {
+              var tr = document.createElement("tr");
+              for (let col = 0; col < columns; col++) {
+                  var td = document.createElement("td");
+                  td.classList.add("dark");
+                  tr.appendChild(td);
+              }
+              grid.appendChild(tr);
+          }
+
+          jsonDataFiltered.forEach(({ answer, startx, starty, orientation, position, clue }) => {
+              var rowIdx = starty - 1;
+              var colIdx = startx - 1;
+              var tr = grid.childNodes[rowIdx];
+
+              tr.childNodes[colIdx].classList.remove("dark");
+              for (let i = 0; i < answer.length; i++) {
+                  var currentRowIdx = orientation === "down" ? rowIdx + i : rowIdx;
+                  var currentColIdx = orientation === "across" ? colIdx + i : colIdx;
+                  var cell = grid.childNodes[currentRowIdx].childNodes[currentColIdx];
+                  cell.classList.remove("dark");
+                  cell.innerHTML = answer[i].toUpperCase();                
+              }                                  
+          });
+          document.getElementById("submit").style.display = 'none';
+          document.getElementById("solve").style.display = 'none';
+          document.getElementById("ret").style.display = 'inline';
+      }       
+
+      
+      // Display result in console
+      console.log(JSON.stringify(jsonData));
+  </script>
+{% endblock %}

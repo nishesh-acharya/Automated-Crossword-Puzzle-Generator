@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Nav Bar -->
+<div class="topnav">
+  
+  <div class="brand">
+    <a>
+      <h1><span>C</span>rossword<span>P</span>uzzle</h1>
+    </a>
+  </div>
+  
+  <div class="link">
+    <a href="{{ url_for('logout') }} ">Logout</a>
+  <a href="#about">About</a>
+  <a href="{{ url_for('leaderboard') }}">Leaderboards</a>
+  <a class="active" href="#home">Home</a>  
+</div>
+</div>
+
+<div class="container1">
+  
+    <h2>Select a Difficulty Level</h2>
+
+    <div class="buttons1">
+  <!-- Class easy -->
+  <form method="post" action="{{ url_for('puzzle_easy') }}">
+    <button class="easy" type="submit" >Easy</button>
+  </form>
+  <!-- Class Medium -->
+  <form method="post" action="{{ url_for('puzzle_medium') }}">
+    <button class="medium" type="submit">Medium</button>
+  </form>
+  <!-- Class Hard -->
+  <form method="post" action="{{ url_for('puzzle_hard') }}">
+    <button class="hard" type="submit" >Hard</button>
+    <br>
+    <div class="logout">
+    
+  </div>
+  </form>
+  </div>
+  <p class="loggedinas"> Logged in as {{username}} </p>
+  </div>
+
+  
+
+
+  
+{% endblock %}
+
+
+
+
+
+  
